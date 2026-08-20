@@ -1,48 +1,51 @@
 # Sitmap
 
-A map editor for drawing Cold War briefing maps in the style of World in
-Conflict and Red Storm Rising.
+A map editor for drawing Cold War briefing maps in the style of World in Conflict and Red Storm Rising.
 
 ![Interception over the Norwegian Sea](docs/screenshots/norway-intercept.png)
 
-## Why this exists
+## Motivation
 
-If you've played World in Conflict, you'll remember the mission briefing
-screens: a glowing tactical map, arrows sweeping across Europe, little red and
-blue unit icons creeping towards each other, all lit up like a NORAD display
-in a Cold War thriller. It told you everything about the battle ahead without
-a single line of dialogue.
+If you've played World in Conflict, you'll remember the mission briefing screens: a glowing tactical map, arrows sweeping across Europe, little red and
+blue unit icons creeping towards each other, all lit up like a NORAD display in a Cold War thriller. 
 
-I wanted that screen as a tool, not just a memory.
+It told you everything about the battle ahead without a single line of dialogue.
 
-Sitmap lets you build one yourself. Pick a stretch of the world, drop units on
-it, draw an arrow showing where an armoured column is heading, shade a country
-PACT red or NATO cyan, and export the result as a single glowing PNG. No
-login, no server, no API key required; it runs entirely in the browser off map
-data bundled at build time.
+I really loved the aesthetic of this and wanted the ability to make my own maps like this.
+
+So letting Claude loose with some screenshots and some interpretative guidance we have quite a fun little project.
+
+## Features
+
+Sitmap lets you illustrate a strategic map with BLUFOR (NATO) and OPFOR (Russia/China/PACT) units and other drawing tools.
+
+You can then export those drawings as PNG images or save them for another time.
 
 ![An assault forming up near Murmansk](docs/screenshots/murmansk-assault.png)
 
-It's not a game. There's no combat resolution, no turns, nothing simulated.
-It's a drawing tool for a very specific aesthetic, built because I wanted to
-make Cold War briefing maps and couldn't find anything that already looked
-like this.
+![The Soviets have captured the UK and are pushing their assault on the North Sea and Channel](docs/screenshots/soviet-naval-capture-uk.png)
 
-Most of it was built with Claude Code, in the way I build most side projects
-these days: I know roughly what I want a thing to look and feel like, and I'd
-rather spend my evening steering towards that than typing out mercator
-projection maths by hand. The taste and the "does this actually feel like
-World in Conflict" judgement calls are still mine.
+## Local Development
 
-## Running it
+This uses plain old Javascript with Vue.js and Vite. 
 
 ```bash
 npm install
 npm run dev
 ```
 
-Then open the printed local URL. `npm test` runs the geometry unit tests;
+Then open the printed local URL. 
+
+`npm test` runs the geometry unit tests.
+
 `npm run build` produces a static bundle in `dist/`.
+
+### Adding new units
+
+You can modify [units.js](src/lib/units.js)
+
+Unit icons should ideally be SVG and dimensions of 700x700px, they are scaled down in the map to 50px
+but increase in size as you zoom closer to the map.
 
 ## The tools
 
@@ -110,10 +113,18 @@ having no `fill` to override — the only requirement on a new icon file is a
 transparent background. Drop a file in `src/assets/military/`, add one line
 to `SOURCES` in `src/lib/units.js`, done.
 
+## Licence
+
+MIT 
+
+## Sources 
+
 Map data: Natural Earth and US Census Bureau boundaries (via `world-atlas` and
-`us-atlas`), public domain. Icons: SVG Repo (per-icon licences), game-icons.net
+`us-atlas`), public domain. 
+
+Icons: SVG Repo (per-icon licences), game-icons.net
 (CC BY 3.0, by Lorc, Delapouite & contributors) and Font Awesome Free
-(CC BY 4.0). Music: "Main Menu" from the World in Conflict soundtrack, by Ola
-Strandh — included because a Cold War map editor without it felt unfinished,
-not because I have any rights to it; swap it out if you're doing anything more
-than running this locally for fun.
+(CC BY 4.0). 
+
+Music: "Main Menu" from the World in Conflict soundtrack, by Ola
+Strandh 
