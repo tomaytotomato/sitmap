@@ -147,5 +147,9 @@ watchEffect(() => {
       <button class="tool-button danger" @click="emit('clear')">CLEAR</button>
       <input ref="fileInput" type="file" accept=".json,application/json" hidden @change="onFileChosen" />
     </div>
+
+    <a class="tool-button" href="https://github.com/tomaytotomato/sitmap" target="_blank" rel="noopener noreferrer">
+      SOURCE ON GITHUB ↗
+    </a>
   </div>
 </template>
