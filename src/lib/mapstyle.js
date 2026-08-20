@@ -128,17 +128,33 @@ export function addBaseLayers(map, { countries, coast, borders, usStateBorders }
       'line-opacity': 0.55,
     },
   })
-  // The inner German border: not part of the shared borders mesh (Germany
-  // has no such arc in modern data), so it's its own source, empty except in
-  // Cold War mode.
+  // The Iron Curtain: the inner German border plus the wall around Berlin.
+  // None of this exists as arcs in modern data, so it's its own source,
+  // empty except in Cold War mode. Styled to read as the singular, infamous
+  // barrier it was — a hazard-amber glow under a bright dashed core, unlike
+  // the dim uniform blue-grey used for ordinary borders.
+  map.addLayer({
+    id: 'coldwar-divide-glow',
+    type: 'line',
+    source: 'coldwar-divide',
+    layout: { 'line-join': 'round' },
+    paint: {
+      'line-color': '#ff8800',
+      'line-width': 10,
+      'line-blur': 8,
+      'line-opacity': 0.5,
+    },
+  })
   map.addLayer({
     id: 'coldwar-divide',
     type: 'line',
     source: 'coldwar-divide',
+    layout: { 'line-join': 'round' },
     paint: {
-      'line-color': '#1e3f63',
-      'line-width': 1,
-      'line-opacity': 0.9,
+      'line-color': '#ffcc33',
+      'line-width': 2.2,
+      'line-opacity': 1,
+      'line-dasharray': [4, 2.5],
     },
   })
   // Coastline glow: three strokes of the coast lines, wide and blurred

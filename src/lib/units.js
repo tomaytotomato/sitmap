@@ -11,7 +11,6 @@ import b2Svg from '../assets/military/b2spirit.svg?raw'
 import transportSvg from '../assets/military/transport.svg?raw'
 import warshipSvg from '../assets/military/warship.svg?raw'
 import submarineSvg from '../assets/military/submarine.svg?raw'
-import attackHeliSvg from '../assets/military/attack-heli.svg?raw'
 import riflemanSvg from '../assets/military/rifleman.svg?raw'
 import battleSvg from '../assets/military/battle.svg?raw'
 import artillerySvg from '../assets/military/artillery.svg?raw'
@@ -26,23 +25,26 @@ import akulaSvg from '../assets/military/akula-submarine.svg?raw'
 import losAngelesSvg from '../assets/military/los-angeles-submarine.svg?raw'
 import abramsSvg from '../assets/military/abrams.svg?raw'
 import t80Svg from '../assets/military/t80.svg?raw'
-import { ICON_PATHS } from './icon-paths.js'
-
-function pathIcon(name) {
-  const icon = ICON_PATHS[name]
-  const body = icon.paths.map((d) => `<path d="${d}"/>`).join('')
-  return `<svg xmlns="http://www.w3.org/2000/svg" width="512" height="512" viewBox="${icon.viewBox}" fill="#000">${body}</svg>`
-}
+import bradleySvg from '../assets/military/bradley.svg?raw'
+import bmp2Svg from '../assets/military/bmp2.svg?raw'
+import ah64ApacheSvg from '../assets/military/ah64-apache.svg?raw'
+import ch47ChinookSvg from '../assets/military/ch47-chinook.svg?raw'
+import uh60BlackhawkSvg from '../assets/military/uh60-blackhawk.svg?raw'
+import rah66ComancheSvg from '../assets/military/rah66-comanche.svg?raw'
+import mi24HindSvg from '../assets/military/mi24-hind.svg?raw'
+import mv22OspreySvg from '../assets/military/mv22-osprey.svg?raw'
+import eurocopterTigerSvg from '../assets/military/eurocopter-tiger.svg?raw'
+import oh58KiowaSvg from '../assets/military/oh58-kiowa.svg?raw'
+import seaKingSvg from '../assets/military/sea-king.svg?raw'
+import ah1CobraSvg from '../assets/military/ah1-cobra.svg?raw'
 
 const SOURCES = {
-  apc: pathIcon('GiApc'),
   infantry: riflemanSvg,
   fighter: f16Svg,
   mig: mig23Svg,
   bomber: bomberSvg,
   stealth: b2Svg,
   transport: transportSvg,
-  heli: attackHeliSvg,
   ship: warshipSvg,
   sub: submarineSvg,
   battle: battleSvg,
@@ -58,9 +60,36 @@ const SOURCES = {
   'los-angeles-submarine': losAngelesSvg,
   'm1-abrams': abramsSvg,
   't80': t80Svg,
+  bradley: bradleySvg,
+  bmp2: bmp2Svg,
+  'ah64-apache': ah64ApacheSvg,
+  'ch47-chinook': ch47ChinookSvg,
+  'uh60-blackhawk': uh60BlackhawkSvg,
+  'rah66-comanche': rah66ComancheSvg,
+  'mi24-hind': mi24HindSvg,
+  'mv22-osprey': mv22OspreySvg,
+  'eurocopter-tiger': eurocopterTigerSvg,
+  'oh58-kiowa': oh58KiowaSvg,
+  'sea-king': seaKingSvg,
+  'ah1-cobra': ah1CobraSvg,
 }
 
 export const UNIT_KINDS = Object.keys(SOURCES)
+
+// All units render into the same square box (see unitIconSize below), so a
+// silhouette cropped tighter to its vehicle than its neighbours ends up
+// looking oversized next to them — Bradley/BMP-2 have much less padding
+// around the hull than the tank icons. This tunes the default placement
+// scale rather than the box itself, so it stays adjustable per-instance.
+const UNIT_DEFAULT_SCALE = {
+  bradley: 0.7,
+  bmp2: 0.7,
+  mig: 1.4,
+}
+
+export function unitDefaultScale(kind) {
+  return UNIT_DEFAULT_SCALE[kind] ?? 1
+}
 
 // Units read fine as small ticks across a whole theatre, but at close zoom
 // there's both room and reason to make them easier to read. Ramps between
@@ -79,6 +108,7 @@ export function unitIconSize(zoom) {
 // this map (the generic silhouettes) stays available to every faction, as
 // it always has been.
 const UNIT_FACTIONS = {
+  fighter: ['blue', 'tan'],
   'arleigh-burke-destroyer': ['blue'],
   'nimitz-carrier': ['blue'],
   'los-angeles-submarine': ['blue'],
@@ -90,11 +120,33 @@ const UNIT_FACTIONS = {
   'akula-submarine': ['red'],
   'm1-abrams': ['blue'],
   't80': ['red'],
+  bradley: ['blue'],
+  bmp2: ['red'],
+  'ah64-apache': ['blue'],
+  'ch47-chinook': ['blue'],
+  'uh60-blackhawk': ['blue'],
+  'rah66-comanche': ['blue'],
+  'mi24-hind': ['red'],
+  'mv22-osprey': ['blue'],
+  'eurocopter-tiger': ['blue'],
+  'oh58-kiowa': ['blue'],
+  'sea-king': ['blue'],
+  'ah1-cobra': ['blue'],
 }
 
-export function unitAvailable(kind, faction) {
-  const allowed = UNIT_FACTIONS[kind]
-  return !allowed || allowed.includes(faction)
+// A handful of hulls postdate the Cold War outright (the Comanche never even
+// left prototype stage before 1991, let alone entered service); anything
+// absent from this map is period-appropriate for both eras.
+const UNIT_ERAS = {
+  'rah66-comanche': ['modern'],
+  'mv22-osprey': ['modern'],
+  'eurocopter-tiger': ['modern'],
+}
+
+export function unitAvailable(kind, faction, era) {
+  const allowedFactions = UNIT_FACTIONS[kind]
+  const allowedEras = UNIT_ERAS[kind]
+  return (!allowedFactions || allowedFactions.includes(faction)) && (!allowedEras || allowedEras.includes(era))
 }
 
 const images = new Map()

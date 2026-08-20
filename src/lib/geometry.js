@@ -131,15 +131,21 @@ export function buildArrow(pathLngLat, widthFrac = 0.14) {
   const L = polylineLength(pts)
   if (L === 0) return null
 
-  const w = clamp(L * widthFrac, L * 0.02, L * 0.5)
+  // w is otherwise purely proportional to L, so a very long arrow (spanning
+  // most of a theatre) would grow an arrowhead hundreds of km wide. W_MAX is
+  // an absolute ceiling in normalised mercator space (the whole world is
+  // 1 unit wide), independent of L, so length stops being the only factor
+  // once an arrow gets long enough to hit it.
+  const W_MAX = 0.002
+  const w = clamp(L * widthFrac, L * 0.02, Math.min(L * 0.5, W_MAX))
   const headLen = Math.min(w * 2.8, L * 0.45)
-  const headW = w * 2
+  const headW = w * 1.5
 
   const toBase = trimTo(pts, L - headLen)
   const base = toBase[toBase.length - 1]
   // Overlap the shaft slightly into the head so no seam shows at the joint.
   const shaftPts = trimTo(pts, L - headLen + w * 0.3)
-  const shaft = taperedRibbon(shaftPts, w, w * 0.35)
+  const shaft = taperedRibbon(shaftPts, w, w * 0.2)
 
   const tip = pts[pts.length - 1]
   const nEnd = perp(norm(sub(tip, base)))

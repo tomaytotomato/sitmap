@@ -107,6 +107,17 @@ describe('buildArrow', () => {
     expect(buildArrow([[5, 5]])).toBeNull()
     expect(buildArrow([[5, 5], [5, 5]])).toBeNull()
   })
+
+  it('caps the head width for a long arrow instead of scaling forever', () => {
+    const headWidth = (arrow) => Math.hypot(arrow.head[0][0] - arrow.head[2][0], arrow.head[0][1] - arrow.head[2][1])
+    const w20 = headWidth(buildArrow([[0, 0], [20, 0]]))
+    const w60 = headWidth(buildArrow([[0, 0], [60, 0]]))
+    const w150 = headWidth(buildArrow([[0, 0], [150, 0]]))
+    // Once an arrow is long enough to hit the absolute cap, making it much
+    // longer again shouldn't make the head noticeably wider.
+    expect(w60).toBeCloseTo(w20, 1)
+    expect(w150).toBeCloseTo(w20, 1)
+  })
 })
 
 describe('jitterRing', () => {

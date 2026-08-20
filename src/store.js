@@ -1,4 +1,5 @@
 import { reactive } from 'vue'
+import exampleScenario from './data/sitmap-example.json?raw'
 
 export const scenario = reactive({
   territories: [], // { id, faction, ring: [[lng,lat],...] }
@@ -14,7 +15,7 @@ export const ui = reactive({
   unitKind: 't80',
   showCountryLabels: true,
   showBases: false,
-  mapEra: 'modern', // modern | coldwar
+  mapEra: 'modern', // modern | coldwar — overridden by a loaded scenario's own mapEra, see below
   selectedUnitId: null,
 })
 
@@ -55,6 +56,7 @@ export function serialiseScenario() {
   return JSON.stringify(
     {
       version: 2,
+      mapEra: ui.mapEra,
       territories: scenario.territories,
       arrows: scenario.arrows,
       units: scenario.units,
@@ -68,17 +70,28 @@ export function serialiseScenario() {
 
 export function loadScenarioJSON(text) {
   const data = JSON.parse(text)
+  // Absent on older saves — leave the current era alone rather than assume.
+  if (data.mapEra === 'modern' || data.mapEra === 'coldwar') ui.mapEra = data.mapEra
   scenario.territories = Array.isArray(data.territories) ? data.territories : []
   scenario.arrows = Array.isArray(data.arrows) ? data.arrows : []
   scenario.units = (Array.isArray(data.units) ? data.units : []).map((raw) => {
     let u = raw.kind === 'nuke' ? { ...raw, kind: 'battle' } : raw
-    // The generic tank icon was retired in favour of faction-specific hulls;
-    // route older saves to the closest equivalent for their faction.
+    // The generic tank, APC and attack helicopter icons were retired in
+    // favour of faction-specific hulls; route older saves to the closest
+    // equivalent for their faction (falling back to infantry for the tan
+    // faction, which has none of these).
     if (u.kind === 'tank') {
-      u = { ...u, kind: u.faction === 'red' ? 't80' : u.faction === 'blue' ? 'm1-abrams' : 'apc' }
+      u = { ...u, kind: u.faction === 'red' ? 't80' : u.faction === 'blue' ? 'm1-abrams' : 'infantry' }
+    } else if (u.kind === 'apc') {
+      u = { ...u, kind: u.faction === 'red' ? 'bmp2' : u.faction === 'blue' ? 'bradley' : 'infantry' }
+    } else if (u.kind === 'heli') {
+      u = { ...u, kind: u.faction === 'red' ? 'mi24-hind' : u.faction === 'blue' ? 'ah64-apache' : 'infantry' }
     }
     return { rotation: 0, scale: 1, flipped: false, ...u }
   })
   scenario.labels = Array.isArray(data.labels) ? data.labels : []
   scenario.shades = Array.isArray(data.shades) ? data.shades : []
 }
+
+// The app opens on a worked example rather than a blank map.
+loadScenarioJSON(exampleScenario)

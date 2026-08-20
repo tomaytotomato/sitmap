@@ -35,13 +35,17 @@ function onFileChosen(e) {
   e.target.value = ''
 }
 
-const availableUnitKinds = computed(() => UNIT_KINDS.filter((kind) => unitAvailable(kind, ui.faction)))
+const availableUnitKinds = computed(() => UNIT_KINDS.filter((kind) => unitAvailable(kind, ui.faction, ui.mapEra)))
 
-// A unit kind picked under one faction (e.g. a Soviet hull under PACT) can
-// become unavailable after switching faction; fall back to a kind every
-// faction can use rather than leave a hidden selection armed.
+// A unit kind picked under one faction or era (e.g. a Soviet hull under
+// PACT, or the Osprey in modern mode) can become unavailable after
+// switching either; fall back to a kind every faction/era can use rather
+// than leave a hidden selection armed.
 watch(() => ui.faction, (faction) => {
-  if (!unitAvailable(ui.unitKind, faction)) ui.unitKind = 'infantry'
+  if (!unitAvailable(ui.unitKind, faction, ui.mapEra)) ui.unitKind = 'infantry'
+})
+watch(() => ui.mapEra, (era) => {
+  if (!unitAvailable(ui.unitKind, ui.faction, era)) ui.unitKind = 'infantry'
 })
 
 const iconSrcs = reactive({})

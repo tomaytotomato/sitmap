@@ -67,9 +67,11 @@ describe('buildColdWarCountries: Germany split (real world-atlas data)', () => {
     expect(result.features.some((f) => f.properties.name === 'Germany')).toBe(false)
   })
 
-  it('returns the crossed border segment for rendering the divide', () => {
-    expect(divide.geometry.type).toBe('LineString')
-    expect(divide.geometry.coordinates.length).toBeGreaterThan(1)
+  it('returns a FeatureCollection of divide lines including the inner German border', () => {
+    expect(divide.type).toBe('FeatureCollection')
+    const lengths = divide.features.map((f) => f.geometry.coordinates.length)
+    expect(lengths.every((n) => n > 1)).toBe(true)
+    expect(divide.features.length).toBeGreaterThanOrEqual(1)
   })
 
   const eastRing = east.geometry.coordinates[0][0]
@@ -86,5 +88,40 @@ describe('buildColdWarCountries: Germany split (real world-atlas data)', () => {
   ])('places %s on the %s side', (_name, point, side) => {
     expect(pointInRing(point, eastRing)).toBe(side === 'east')
     expect(pointInRing(point, westRing)).toBe(side === 'west')
+  })
+
+  describe('Berlin carve-out', () => {
+    const eastBerlin = result.features.find((f) => f.properties.gid === 'BER-E')
+    const westBerlin = result.features.find((f) => f.properties.gid === 'BER-W')
+
+    it('produces East Berlin and West Berlin as separate facets', () => {
+      expect(eastBerlin).toBeDefined()
+      expect(westBerlin).toBeDefined()
+    })
+
+    it('returns three divide lines: inner German border, Berlin boundary, the Wall', () => {
+      expect(divide.features).toHaveLength(3)
+    })
+
+    it("East Germany's mainland has a hole where Berlin sits", () => {
+      expect(east.geometry.coordinates[0]).toHaveLength(2)
+    })
+
+    const eastBerlinRing = eastBerlin.geometry.coordinates[0]
+    const westBerlinRing = westBerlin.geometry.coordinates[0]
+
+    it.each([
+      ['Brandenburg Gate', [13.377, 52.516], 'east'],
+      ['Alexanderplatz', [13.413, 52.521], 'east'],
+      ['Pankow', [13.40, 52.57], 'east'],
+      ['Treptow', [13.47, 52.49], 'east'],
+      ['Kurfürstendamm', [13.332, 52.504], 'west'],
+      ['Tegel', [13.29, 52.56], 'west'],
+      ['Zehlendorf', [13.26, 52.43], 'west'],
+      ['Spandau', [13.20, 52.55], 'west'],
+    ])('places %s in %s Berlin', (_name, point, side) => {
+      expect(pointInRing(point, eastBerlinRing)).toBe(side === 'east')
+      expect(pointInRing(point, westBerlinRing)).toBe(side === 'west')
+    })
   })
 })

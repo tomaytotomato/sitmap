@@ -9,7 +9,7 @@ import { scenario, ui, uid, removeFeature, toggleShade, removeShade, serialiseSc
 import { baseStyle, addBaseLayers, addScenarioLayers, applyShades, applyEra, FACTION_COLOURS } from '../lib/mapstyle.js'
 import { buildArrow, jitterRing, unwrapGeometry, polygonLabelPoint } from '../lib/geometry.js'
 import { buildColdWarCountries, blocKeyOf } from '../lib/coldwar.js'
-import { iconDataURL, unitIconSize, UNIT_ICON_MAX_SIZE } from '../lib/units.js'
+import { iconDataURL, unitIconSize, unitDefaultScale, UNIT_ICON_MAX_SIZE } from '../lib/units.js'
 import { exportPNG } from '../lib/export.js'
 import { CITIES, cityVisible, TIER_MIN_ZOOM } from '../data/cities.js'
 import { BASES, baseVisible } from '../data/bases.js'
@@ -223,6 +223,13 @@ function makeUnitElement(unit) {
   el.append(img)
   el.style.filter = `drop-shadow(0 0 5px ${colour})`
   el.addEventListener('click', (e) => {
+    // Mid-draft (drawing a territory or arrow), a click near a unit should
+    // add a point there like clicking bare map would — not silently select
+    // the unit instead and swallow the click, leaving the draft stuck at
+    // its previous point. Let it fall through to the map's own click
+    // handler, which reads the same screen coordinates regardless of which
+    // element was actually hit.
+    if (draft.points.length > 0) return
     e.stopPropagation()
     if (ui.tool === 'erase') {
       removeFeature(unit.id)
@@ -266,8 +273,13 @@ function makeLabelElement(label) {
 
 function syncMarkers() {
   const wanted = new Map()
-  for (const u of scenario.units) wanted.set(u.id, { feature: u, make: makeUnitElement })
-  for (const l of scenario.labels) wanted.set(l.id, { feature: l, make: makeLabelElement })
+  for (const u of scenario.units) wanted.set(u.id, { feature: u, make: makeUnitElement, anchor: 'center', offset: [0, 0] })
+  // 'center' anchors on the whole dot+text box, which puts the true anchor
+  // point somewhere inside the (variable-length) text rather than on the
+  // dot — barely visible zoomed in, but the same fixed pixel offset covers
+  // far more ground once zoomed out, so the dot appears to drift. Anchor on
+  // the dot itself instead, same fix already used for city/base labels.
+  for (const l of scenario.labels) wanted.set(l.id, { feature: l, make: makeLabelElement, anchor: 'left', offset: [-5, 0] })
 
   for (const [id, marker] of markers) {
     if (!wanted.has(id)) {
@@ -275,12 +287,12 @@ function syncMarkers() {
       markers.delete(id)
     }
   }
-  for (const [id, { feature: f, make }] of wanted) {
+  for (const [id, { feature: f, make, anchor, offset }] of wanted) {
     if (markers.has(id)) {
       markers.get(id).setLngLat(f.lngLat)
       continue
     }
-    const marker = new maplibregl.Marker({ element: make(f), draggable: true })
+    const marker = new maplibregl.Marker({ element: make(f), draggable: true, anchor, offset })
       .setLngLat(f.lngLat)
       .addTo(map)
     marker.on('dragend', () => {
@@ -442,7 +454,7 @@ function onClick(e) {
       shadeAt(e.point)
       break
     case 'unit':
-      scenario.units.push({ id: uid(), faction: ui.faction, kind: ui.unitKind, lngLat, rotation: 0, scale: 1, flipped: false })
+      scenario.units.push({ id: uid(), faction: ui.faction, kind: ui.unitKind, lngLat, rotation: 0, scale: unitDefaultScale(ui.unitKind), flipped: false })
       break
     case 'label': {
       const text = window.prompt('Label text:')
@@ -607,6 +619,12 @@ onMounted(() => {
     const usStateBorders = unwrapGeometry(mesh(usStates10m, usStates10m.objects.states, (a, b) => a !== b))
 
     addBaseLayers(map, { countries, coast, borders, usStateBorders })
+    // addBaseLayers always seeds modern data; correct it immediately if the
+    // starting era (app default, or a freshly-loaded scenario's own
+    // mapEra) is actually Cold War — otherwise shading/labels for Cold
+    // War-only gids (DDR, USSR, ...) silently match nothing until the era
+    // toggle is clicked once.
+    applyEra(map, ui.mapEra, eraData)
     addScenarioLayers(map)
     applyShades(map, scenario.shades)
     refreshSource('territories', territoriesGeoJSON())
